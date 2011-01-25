@@ -87,11 +87,21 @@ if __name__ == '__main__':
 
     scale = 50
     dotsize = 5
-    xoff = 200
-    yoff = 200
+    xoff = 300
+    yoff = 300
     timelength = 180
+    timetextlen = 190
 
     sz = svg("My test")
+    sz.set_onload("init(evt)")
+
+    # add the scripting
+    sc = script()
+    sc.set_xlink_href("mouse_over.js")
+    sc.set_xlink_type("text/ecmascript")
+    #xlink:href="mouse_over_effects.js" type="text/ecmascript"
+    sz.addElement(sc)
+
     oh = ShapeBuilder()
 
     idcount = 0
@@ -102,32 +112,49 @@ if __name__ == '__main__':
         tx, ty = polar2Rect(timelength, ang)
         sz.addElement(oh.createLine(xoff, yoff, xoff + tx, yoff + ty, strokewidth=2, stroke="black"))
 
+        tx, ty = polar2Rect(timetextlen, ang-90)
+        tt = str(hour)
+        t = text(tt, tx + xoff, ty + yoff)
+        sz.addElement(t)
+
+    # Draw the text element for use with mouse events
+    t = text("text box", xoff, 20)
+    t.set_id("textNode")
+    sz.addElement(t)
+
+    # Draw the QSO points
     recs = adifParse(sys.argv[1])
     for rec in recs:
         #print rec
         call = rec["call"]
         if not rec.has_key('gridsquare'):
-            print "skipping " + call
+            print "skipping (no grid) " + call
             continue
         if not rec.has_key('freq'):
-            print "skipping " + call
+            print "skipping (freq) " + call
             continue
 
         angle = angleFromTime(rec["time_on"])
         distance, azimuth = bearingDistance(rec["my_gridsquare"], rec["gridsquare"])
         distance = distance / scale
-        #print distance, azimuth
-        bx, by = polar2Rect(distance, azimuth)
+
+        bx, by = polar2Rect(distance, angle-90)
         fillcolor = freq2Color(rec["freq"])
 
         eid = str(idcount)
+        idcount = idcount + 1
+
+        poptext = rec["call"] + " " + str(rec["freq"])
 
         dot = circle(bx + xoff, by + yoff, dotsize)
         dot.set_fill(fillcolor)
         dot.set_stroke('black')
+        dot.set_id(eid)
+        dot.set_onmouseover('showQSO("' + poptext + '")')
+        dot.set_onmouseout('hideQSO()')
+        dot.set_onclick('QSOClick("' + rec["call"] + '")')
 
         sz.addElement(dot)
-
 
     sz.save("./testout.svg")
 
