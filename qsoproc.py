@@ -1,4 +1,5 @@
-# !/usr/bin/python
+#!/usr/bin/python
+#
 #import re
 from Hamlib import *
 from adif import *
