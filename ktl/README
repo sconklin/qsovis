@@ -1,0 +1,5 @@
+
+ktl - kteam-tools library
+
+A python module for use in any kteam-tools scripts. A module gives you
+namespace separation and a cleaner design.

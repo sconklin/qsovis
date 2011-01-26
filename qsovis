@@ -1,0 +1,237 @@
+#!/usr/bin/env python
+#
+
+# for the framsework
+from sys                                import argv
+from getopt                             import getopt, GetoptError
+from ktl.utils                          import stdo
+from ktl.std_app                        import StdApp
+
+# Project specific
+import re
+from math import sin, cos, radians
+
+from Hamlib import *
+from adif import *
+
+from pysvg.filter import *
+from pysvg.gradient import *
+from pysvg.linking import *
+from pysvg.script import *
+from pysvg.shape import *
+from pysvg.structure import *
+from pysvg.style import *
+from pysvg.text import *
+from pysvg.builders import *
+
+from qsoutils import *
+
+# CmdlineError
+#
+# The type of exception that will be raised by Cmdline.process() if there
+# are command line processing errors.
+#
+class CmdlineError(Exception):
+    # __init__
+    #
+    def __init__(self, error):
+        self.msg = error
+
+# Cmdline
+#
+# Do all the command line processing.
+#
+class Cmdline:
+    # __init__
+    #
+    def __init__(self):
+        self.cfg = {}
+
+    # error
+    #
+    def error(self, e, defaults):
+        if e != '': print e
+        self.usage(defaults)
+
+    # usage
+    #
+    # Prints out the help text which explains the command line options.
+    #
+    def usage(self, defaults):
+        stdo("    Usage:                                                                                   \n")
+        stdo("        %s [--verbose] [--config=<cfg file>] [--debug=<dbg options>]                         \n" % self.cfg['app_name'])
+        stdo("                                                                                             \n")
+        stdo("    Options:                                                                                 \n")
+        stdo("        --help           Prints this text.                                                   \n")
+        stdo("                                                                                             \n")
+        stdo("        --verbose        Give some feedback of what is happening while the script is         \n")
+        stdo("                         running.                                                            \n")
+        stdo("                                                                                             \n")
+        stdo("        --config=<cfg file>                                                                  \n")
+        stdo("                         The full path to the configuration file to use instead of           \n")
+        stdo("                         the default location.                                               \n")
+        stdo("                                                                                             \n")
+        stdo("        --debug=<debug options>                                                              \n")
+        stdo("                         Performs additional output related to the option enabled and        \n")
+        stdo("                         the application defined support for the option.                     \n")
+        stdo("                                                                                             \n")
+        stdo("    Examples:                                                                                \n")
+        stdo("        %s --verbose                                                                         \n" % self.cfg['app_name'])
+
+    # process
+    #
+    # As you can probably tell from the name, this method is responsible
+    # for calling the getopt function to process the command line. All
+    # parameters are processed into class variables for use by other
+    # methods.
+    #
+    def process(self, argv, defaults):
+        self.cfg['app_name'] = argv[0]
+        result = True
+        try:
+            optsShort = ''
+            optsLong  = ['help', 'verbose', 'config=', 'debug=']
+            opts, args = getopt(argv[1:], optsShort, optsLong)
+
+            for opt, val in opts:
+                if (opt == '--help'):
+                    raise CmdlineError('')
+
+                elif (opt == '--verbose'):
+                    self.cfg['verbose'] = True
+
+                elif opt in ('--config'):
+                    self.cfg['configuration_file'] = val
+
+                elif opt in ('--debug'):
+                    self.cfg['debug'] = val.split(',')
+
+        except GetoptError, error:
+            print(error, defaults)
+            raise CmdlineError('')
+
+        return self.cfg
+
+    # verify_options
+    #
+    def verify_options(self, cfg):
+        return
+
+
+# AppTemplate
+#
+class AppTemplate(StdApp):
+    # __init__
+    #
+    def __init__(self):
+        StdApp.__init__(self)
+        self.defaults = {}
+
+    # main
+    #
+    def main(self):
+        cmdline = Cmdline()
+        try:
+            self.merge_config_options(self.defaults, cmdline.process(argv, self.defaults))
+            cmdline.verify_options(self.cfg)
+
+        # Handle the user presses <ctrl-C>.
+        #
+        except KeyboardInterrupt:
+            pass
+
+        # Handle command line errors.
+        #
+        except CmdlineError as e:
+            cmdline.error(e.msg, self.defaults)
+
+        tz = -6
+        scale = 30
+        dotsize = 3
+        xoff = 500
+        yoff = 500
+        timelength = 180
+        timetextlen = 190
+
+        # create the svg document itself
+        sz = svg("My test")
+
+        # add the scripting
+        sc = script()
+        sc.set_xlink_href("mouse_over.js")
+        sc.set_xlink_type("text/ecmascript")
+        sz.addElement(sc)
+        sz.set_onload("init(evt)")
+
+        oh = ShapeBuilder()
+
+        idcount = 0
+
+        # draw 24 hour markers
+        for hour in range (0, 24):
+            ang = hour * 15
+            tx, ty = polar2Rect(timelength, ang)
+            sz.addElement(oh.createLine(xoff, yoff, xoff + tx, yoff + ty, strokewidth=2, stroke="black"))
+
+            tx, ty = polar2Rect(timetextlen, ang-90)
+            dh = hour - 6
+            if dh < 0:
+                dh = dh + 24
+            tt = str(dh)
+            t = text(tt, tx + xoff, ty + yoff)
+            sz.addElement(t)
+
+        # Draw the text element for use with mouse events
+        t = text("text box", xoff, 20)
+        t.set_id("textNode")
+        sz.addElement(t)
+
+        # Draw the QSO points
+        recs = adifParse(sys.argv[1])
+        for rec in recs:
+            #print rec
+            call = rec["call"]
+            if not rec.has_key('gridsquare'):
+                #print "skipping (no grid) " + call
+                continue
+            if not rec.has_key('freq'):
+                #print "skipping (freq) " + call
+                continue
+
+            if isUSCall(call):
+                print "skipping (US) " + call
+                continue
+
+            angle = angleFromTime(rec["time_on"])
+            distance, azimuth = bearingDistance(rec["my_gridsquare"], rec["gridsquare"])
+            distance = distance / scale
+
+            bx, by = polar2Rect(distance, angle-90)
+            fillcolor = freq2Color(rec["freq"])
+
+            eid = str(idcount)
+            idcount = idcount + 1
+
+            poptext = rec["call"] + " " + str(rec["freq"])
+
+            dot = circle(bx + xoff, by + yoff, dotsize)
+            dot.set_fill(fillcolor)
+            dot.set_stroke('black')
+            dot.set_id(eid)
+            dot.set_onmouseover('showQSO("' + poptext + '")')
+            dot.set_onmouseout('hideQSO()')
+            dot.set_onclick('QSOClick("' + rec["call"] + '")')
+
+            sz.addElement(dot)
+
+        sz.save("./testout.svg")
+
+
+        return
+
+if __name__ == '__main__':
+    app = AppTemplate()
+    app.main()
+
+# vi:set ts=4 sw=4 expandtab:
+
