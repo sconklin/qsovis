@@ -189,7 +189,7 @@ class AppTemplate(StdApp):
         # create the svg document itself
         sz = svg("My test")
 
-        # add the scripting
+        # add the scripting we need to handle events
         sc = script()
         sc.set_xlink_href("mouse_over.js")
         sc.set_xlink_type("text/ecmascript")
@@ -198,13 +198,14 @@ class AppTemplate(StdApp):
 
         oh = ShapeBuilder()
 
+        # use an incrementing counter to set element IDs
         idcount = 0
 
-        # draw 24 hour markers
+        # draw 24 hour markers like a clock face
         for hour in range (0, 24):
-            ang = hour * 15
-            tx, ty = polar2Rect(timelength, ang)
-            sz.addElement(oh.createLine(xoff, yoff, xoff + tx, yoff + ty, strokewidth=2, stroke="black"))
+            ang = (hour + tz) * 15
+            tx, ty = polar2Rect(timelength, ang-90)
+            sz.addElement(oh.createLine(xoff, yoff, xoff + tx, yoff + ty, strokewidth=2, stroke="lightgray"))
 
             tx, ty = polar2Rect(timetextlen, ang-90)
             dh = hour - 6
@@ -237,7 +238,7 @@ class AppTemplate(StdApp):
                     print "skipping (US) " + call
                 continue
 
-            angle = angleFromTime(rec["time_on"])
+            angle = angleFromTime(rec["time_on"]) + (tz * 15)
             distance, azimuth = bearingDistance(rec["my_gridsquare"], rec["gridsquare"])
             distance = distance / scale
 
