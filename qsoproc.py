@@ -1,8 +1,15 @@
 #!/usr/bin/python
 #
-#import re
+# TODO:
+# Add parameter and option parsing
+# Take support functions to another file
+# Fix 'clock' display to use TZ and display midnight at top
+# Add filter buttons
+# Get the colors right
+# Make hover text appear over the spot
+#
+import re
 from math import sin, cos, radians
-
 
 from Hamlib import *
 from adif import *
@@ -43,6 +50,49 @@ def polar2Rect(distance, angle):
     x = distance * cos(radians(angle))
     y = distance * sin(radians(angle))
     return (x, y)
+
+#def isCanadianCall(call):
+# CY0	Sable Is
+# CY9	St-Paul Is
+# VA1, VE1	New Brunswick, Nova Scotia
+# VA2, VE2	Quebec
+# VA3, VE3	Ontario
+# VA4, VE4	Manitoba
+# VA5, VE5	Saskatchewan
+# VA6, VE6	Alberta
+# VA7, VE7	British Columbia
+# VE8	North West Territories
+# VE9	New Brunswick
+# VO1	Newfoundland
+# VO2	Labrador
+# VY0	Nunavut
+# VY1	Yukon
+# VY2	Prince Edward Island
+
+
+def isUSCall(call):
+# 1x2, 1x3, 2x1, 2x2, 2x3
+#  /\b(([A-Z]{1,2})|([A-Z][0-9]))[0-9][A-Z]{1,3}\b/
+
+# Prefixes (all followed by alpha only)
+#
+# [AKNW]L[0-7] Alaska
+# [AKNW]H[67] Hawaii
+#
+# A[0-9]
+# K[0-9]
+# N[0-9]
+# W[0-9]
+#
+# A[A-K][0-9]
+# K[A-K, M-Z][0-9]
+# N[A-K, M-Z][0-9]
+# W[A-K, M-O, Q-Z][0-9]
+#
+    usregex = '^([AKNW]|A[A-K]|K[A-KM-Z]|N[A-KM-Z]|W[A-KM-OQ-Z])[0-9][A-Z]+'
+
+    result = re.search(usregex, call, re.I)
+    return result
 
 def freq2Color(freqstr):
     freq = float(freqstr)
@@ -85,22 +135,23 @@ def freq2Color(freqstr):
 
 if __name__ == '__main__':
 
-    scale = 50
-    dotsize = 5
-    xoff = 300
-    yoff = 300
+    tz = -6
+    scale = 30
+    dotsize = 3
+    xoff = 500
+    yoff = 500
     timelength = 180
     timetextlen = 190
 
+    # create the svg document itself
     sz = svg("My test")
-    sz.set_onload("init(evt)")
 
     # add the scripting
     sc = script()
     sc.set_xlink_href("mouse_over.js")
     sc.set_xlink_type("text/ecmascript")
-    #xlink:href="mouse_over_effects.js" type="text/ecmascript"
     sz.addElement(sc)
+    sz.set_onload("init(evt)")
 
     oh = ShapeBuilder()
 
@@ -113,7 +164,10 @@ if __name__ == '__main__':
         sz.addElement(oh.createLine(xoff, yoff, xoff + tx, yoff + ty, strokewidth=2, stroke="black"))
 
         tx, ty = polar2Rect(timetextlen, ang-90)
-        tt = str(hour)
+        dh = hour - 6
+        if dh < 0:
+            dh = dh + 24
+        tt = str(dh)
         t = text(tt, tx + xoff, ty + yoff)
         sz.addElement(t)
 
@@ -128,10 +182,14 @@ if __name__ == '__main__':
         #print rec
         call = rec["call"]
         if not rec.has_key('gridsquare'):
-            print "skipping (no grid) " + call
+            #print "skipping (no grid) " + call
             continue
         if not rec.has_key('freq'):
-            print "skipping (freq) " + call
+            #print "skipping (freq) " + call
+            continue
+
+        if isUSCall(call):
+            print "skipping (US) " + call
             continue
 
         angle = angleFromTime(rec["time_on"])
