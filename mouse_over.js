@@ -6,13 +6,16 @@ function init(evt) {
     svgQsoText = document.getElementById("textNode").firstChild;
 }
 
-function showQSO(city) {
-    //change text-Value
-    svgQsoText.nodeValue = city;
+function showQSO(evt) {
+    evt.target.setAttributeNS(null,"r","8");
+    evt.target.setAttributeNS(null,"opacity","0.5");
+    svgQsoText.nodeValue = evt.target.getAttribute("call") + " " + evt.target.getAttribute("freq");
+    //svgQsoText.nodeValue = qsotext;
 }
 
-function hideQSO() {
-    //empty text-String
+function hideQSO(evt) {
+    evt.target.setAttributeNS(null,"r","3");
+    evt.target.setAttributeNS(null,"opacity","1.0");
     svgQsoText.nodeValue = " ";
 }
 

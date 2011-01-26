@@ -248,14 +248,21 @@ class AppTemplate(StdApp):
             eid = str(idcount)
             idcount = idcount + 1
 
-            poptext = rec["call"] + " " + str(rec["freq"])
-
+            #poptext = rec["call"] + " " + str(rec["freq"])
             dot = circle(bx + xoff, by + yoff, dotsize)
+            # appearance
             dot.set_fill(fillcolor)
             dot.set_stroke('black')
+            # attributes and such
             dot.set_id(eid)
-            dot.set_onmouseover('showQSO("' + poptext + '")')
-            dot.set_onmouseout('hideQSO()')
+            dot.setAttribute("call", call)
+            dot.setAttribute("freq", rec['freq'])
+            dot.setAttribute("time", rec['time_on'])
+            dot.setAttribute("date", rec['qso_date'])
+
+            # events
+            dot.set_onmouseover('showQSO(evt)')
+            dot.set_onmouseout('hideQSO(evt)')
             dot.set_onclick('QSOClick("' + rec["call"] + '")')
 
             sz.addElement(dot)
