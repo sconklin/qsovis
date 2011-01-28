@@ -31,49 +31,6 @@ def polar2Rect(distance, angle):
     y = distance * sin(radians(angle))
     return (x, y)
 
-#def isCanadianCall(call):
-# CY0	Sable Is
-# CY9	St-Paul Is
-# VA1, VE1	New Brunswick, Nova Scotia
-# VA2, VE2	Quebec
-# VA3, VE3	Ontario
-# VA4, VE4	Manitoba
-# VA5, VE5	Saskatchewan
-# VA6, VE6	Alberta
-# VA7, VE7	British Columbia
-# VE8	North West Territories
-# VE9	New Brunswick
-# VO1	Newfoundland
-# VO2	Labrador
-# VY0	Nunavut
-# VY1	Yukon
-# VY2	Prince Edward Island
-
-
-def isUSCall(call):
-# 1x2, 1x3, 2x1, 2x2, 2x3
-#  /\b(([A-Z]{1,2})|([A-Z][0-9]))[0-9][A-Z]{1,3}\b/
-
-# Prefixes (all followed by alpha only)
-#
-# [AKNW]L[0-7] Alaska
-# [AKNW]H[67] Hawaii
-#
-# A[0-9]
-# K[0-9]
-# N[0-9]
-# W[0-9]
-#
-# A[A-K][0-9]
-# K[A-K, M-Z][0-9]
-# N[A-K, M-Z][0-9]
-# W[A-K, M-O, Q-Z][0-9]
-#
-    usregex = '^([AKNW]|A[A-K]|K[A-KM-Z]|N[A-KM-Z]|W[A-KM-OQ-Z])[0-9][A-Z]+'
-
-    result = re.search(usregex, call, re.I)
-    return result
-
 def freq2Color(freqstr):
     freq = float(freqstr)
     if (freq >= 1.8) and (freq <= 2.0):
@@ -112,3 +69,49 @@ def freq2Color(freqstr):
     else:
         # Unknown 
         return 'dimgrey';
+
+class qsoFilter:
+    # __init__
+    #
+    def __init__(self, debug = False):
+        self.debug = debug
+        self.filters = {
+            'Continental US': {'enabled':0, 'regex':'^([AKNW]|A[A-K]|K[A-KM-Z]|N[A-KM-Z]|W[A-KM-OQ-Z])[0-9][A-Z]+'},
+            'Alaska': {'enabled':0, 'regex':'^[AKNW]L[0-7]+'},
+            'Hawaii': {'enabled':0, 'regex':'^[AKNW]H[67]+'},
+            'Canada': {'enabled':0, 'regex':'^(VA[1-7]|VE[1-9|VY[0-2]|VO[12]|CY[09])+'},
+            'Mexico': {'enabled':0, 'regex':'^(XE[1-3]|XF[1-4])+'}
+            }
+
+    def loadFromFile(self, filename):
+        # load the filters from a json file
+        return
+
+    def saveToFile(self, filename):
+        # save the filters to a json file
+        return
+
+    def enable(self, fname):
+        # turn on the filter
+        fil = self.filters[fname]
+        fil['enabled'] = 1
+        return
+
+    def disable(self, fname):
+        # turn off the filter
+        fil = self.filters[fname]
+        fil['enabled'] = 0
+        return
+
+    def filterCall(self, call):
+        # return TRUE if call passes filters
+        for filname, fil in self.filters.items():
+            if self.debug:
+                print "Trying filter ", filname
+            if fil['enabled']:
+                if re.search(fil['regex'], call, re.I):
+                    if self.debug:
+                        print "Callsign " + call + " matches filter for " + filname
+                    return False
+        
+        return True

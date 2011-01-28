@@ -1,0 +1,53 @@
+http://life.itu.ch/radioclub/rr/ap42.htm
+
+
+
+# Canada
+# CY0	Sable Is
+# CY9	St-Paul Is
+# VA1, VE1	New Brunswick, Nova Scotia
+# VA2, VE2	Quebec
+# VA3, VE3	Ontario
+# VA4, VE4	Manitoba
+# VA5, VE5	Saskatchewan
+# VA6, VE6	Alberta
+# VA7, VE7	British Columbia
+# VE8	North West Territories
+# VE9	New Brunswick
+# VO1	Newfoundland
+# VO2	Labrador
+# VY0	Nunavut
+# VY1	Yukon
+# VY2	Prince Edward Island
+
+'^(VA[1-7]|VE[1-9|VY[0-2]|VO[12]|CY[09])+'
+
+
+
+# US
+# 1x2, 1x3, 2x1, 2x2, 2x3
+
+# Prefixes (all followed by alpha only)
+#
+# [AKNW]L[0-7] Alaska
+# [AKNW]H[67] Hawaii
+#
+# A[0-9]
+# K[0-9]
+# N[0-9]
+# W[0-9]
+#
+# A[A-K][0-9]
+# K[A-K, M-Z][0-9]
+# N[A-K, M-Z][0-9]
+# W[A-K, M-O, Q-Z][0-9]
+#
+Continental US regex = '^([AKNW]|A[A-K]|K[A-KM-Z]|N[A-KM-Z]|W[A-KM-OQ-Z])[0-9][A-Z]+'
+Alaska - '^[AKNW]L[0-7]+'    
+Hawaii - '^[AKNW]H[67]+'    
+
+# Mexic0
+XE[1-3]
+XF[0-4]
+'^(XE[1-3]|XF[1-4])+'
+
