@@ -31,56 +31,60 @@ def polar2Rect(distance, angle):
     y = distance * sin(radians(angle))
     return (x, y)
 
-def freq2Color(freqstr):
-    freq = float(freqstr)
-    if (freq >= 1.8) and (freq <= 2.0):
-        # 160m
-        return 'lawngreen';
-    elif (freq >= 3.5) and (freq <= 4.0):
-        # 80m
-        return 'darkviolet';
-    elif (freq >= 5.3) and (freq <= 5.5):
-        # 60m
-        return 'midnightblue';
-    elif (freq >= 7.0) and (freq <= 7.3):
-        # 40m
-        return 'cornflowerblue';
-    elif (freq >= 10.1) and (freq <= 10.150):
-        # 30m
-        return 'seagreen';
-    elif (freq >= 14.0) and (freq <= 14.350):
-        # 20m
-        return 'goldenrod';
-    elif (freq >= 18.068) and (freq <= 18.168):
-        # 17m
-        return 'khaki';
-    elif (freq >= 21.0) and (freq <= 21.450):
-        # 15m
-        return 'tan';
-    elif (freq >= 24.890) and (freq <= 24.990):
-        # 12m
-        return 'brown';
-    elif (freq >= 28.0) and (freq <= 29.7):
-        # 10m
-        return 'mediumorchid';
-    elif (freq >= 50.0) and (freq <= 54.0):
-        # 6m
-        return 'red';
-    else:
-        # Unknown 
-        return 'dimgrey';
+#class Menu:
+#    # __init__
+#    #
+#    def __init__(self, debug = False):
+#        self.debug = debug
+#        self.style = None
+#
+#    def Button(self, x, y, ):
 
-class qsoFilter:
+
+
+
+class Frequency:
+    # __init__
+    #
+    def __init__(self, debug = False):
+        self.debug = debug
+        self.unknown_color = 'dimgrey'
+        self.bands = {
+            '160m': {'filtered': 0, 'min': 1.8, 'max': 2.0, 'color': 'lawngreen'},
+            '80m': {'filtered': 0, 'min': 3.5, 'max': 4.0, 'color': 'darkviolet'},
+            '60m': {'filtered': 0, 'min': 5.3, 'max': 5.5, 'color': 'midnightblue'},
+            '40m': {'filtered': 0, 'min': 7.0, 'max': 7.3, 'color': 'cornflowerblue'},
+            '30m': {'filtered': 0, 'min': 10.1, 'max': 10.150, 'color': 'seagreen'},
+            '20m': {'filtered': 0, 'min': 14.0, 'max': 14.350, 'color': 'goldenrod'},
+            '17m': {'filtered': 0, 'min': 18.068, 'max': 18.168, 'color': 'khaki'},
+            '15m': {'filtered': 0, 'min': 21.0, 'max': 21.450, 'color': 'tan'},
+            '12m': {'filtered': 0, 'min': 24.890, 'max': 24.990, 'color': 'brown'},
+            '10m': {'filtered': 0, 'min': 28.0, 'max': 29.7, 'color': 'mediumorchid'},
+            '6m': {'filtered': 0, 'min': 50.0, 'max': 54.0, 'color': 'red'}
+            }
+
+    def getColor(self, freq, filterme = True):
+        # return None if it's filtered, unless overridden
+        for bandname, band in self.bands.items():
+            if (float(freq) >= band['min']) and (float(freq) <= band['max']):
+                if band['filtered'] and filterme:
+                    return None
+                else:
+                    return (band['color'])
+                
+        return self.unknown_color
+                                
+class CallFilter:
     # __init__
     #
     def __init__(self, debug = False):
         self.debug = debug
         self.filters = {
-            'Continental US': {'enabled':0, 'regex':'^([AKNW]|A[A-K]|K[A-KM-Z]|N[A-KM-Z]|W[A-KM-OQ-Z])[0-9][A-Z]+'},
-            'Alaska': {'enabled':0, 'regex':'^[AKNW]L[0-7]+'},
-            'Hawaii': {'enabled':0, 'regex':'^[AKNW]H[67]+'},
-            'Canada': {'enabled':0, 'regex':'^(VA[1-7]|VE[1-9|VY[0-2]|VO[12]|CY[09])+'},
-            'Mexico': {'enabled':0, 'regex':'^(XE[1-3]|XF[1-4])+'}
+            'Continental US': {'filtered':0, 'regex':'^([AKNW]|A[A-K]|K[A-KM-Z]|N[A-KM-Z]|W[A-KM-OQ-Z])[0-9][A-Z]+'},
+            'Alaska': {'filtered':0, 'regex':'^[AKNW]L[0-7]+'},
+            'Hawaii': {'filtered':0, 'regex':'^[AKNW]H[67]+'},
+            'Canada': {'filtered':0, 'regex':'^(VA[1-7]|VE[1-9|VY[0-2]|VO[12]|CY[09])+'},
+            'Mexico': {'filtered':0, 'regex':'^(XE[1-3]|XF[1-4])+'}
             }
 
     def loadFromFile(self, filename):
@@ -94,13 +98,13 @@ class qsoFilter:
     def enable(self, fname):
         # turn on the filter
         fil = self.filters[fname]
-        fil['enabled'] = 1
+        fil['filtered'] = 1
         return
 
     def disable(self, fname):
         # turn off the filter
         fil = self.filters[fname]
-        fil['enabled'] = 0
+        fil['filtered'] = 0
         return
 
     def filterCall(self, call):
@@ -108,7 +112,7 @@ class qsoFilter:
         for filname, fil in self.filters.items():
             if self.debug:
                 print "Trying filter ", filname
-            if fil['enabled']:
+            if fil['filtered']:
                 if re.search(fil['regex'], call, re.I):
                     if self.debug:
                         print "Callsign " + call + " matches filter for " + filname

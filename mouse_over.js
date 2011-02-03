@@ -24,3 +24,17 @@ function QSOClick(call) {
     svgQsoText.nodeValue = call;
     window.open("http://www.qrz.com/db/" + call, "QRZ Lookup");
 }
+
+function highlightButton(evt) {
+    evt.target.setAttributeNS(null,"fill","red");
+}
+
+function unhighlightButton(evt) {
+    evt.target.setAttributeNS(null,"fill","black");
+}
+
+function buttonClick(param) {
+    //show an alert message
+    svgQsoText.nodeValue = call;
+}
+
